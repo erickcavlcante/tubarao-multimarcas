@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export default auth((req) => {
   const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
-  const isAdmin = (req.auth?.user as { isAdmin?: boolean } | undefined)?.isAdmin;
+  const isAdmin = req.auth?.user?.isAdmin;
 
   if (isAdminRoute && !isAdmin) {
     const loginUrl = new URL("/login", req.nextUrl.origin);

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  const isAdmin = (session?.user as { isAdmin?: boolean } | undefined)?.isAdmin;
+  const isAdmin = session?.user?.isAdmin;
 
   if (!isAdmin) {
     redirect("/login");

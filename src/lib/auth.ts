@@ -33,11 +33,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     jwt: ({ token, user }) => {
-      if (user) token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false;
+      if (user) token.isAdmin = user.isAdmin ?? false;
       return token;
     },
     session: ({ session, token }) => {
-      if (session.user) (session.user as { isAdmin?: boolean }).isAdmin = token.isAdmin as boolean;
+      if (session.user) session.user.isAdmin = token.isAdmin;
       return session;
     },
   },
