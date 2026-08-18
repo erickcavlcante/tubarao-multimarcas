@@ -27,7 +27,7 @@ Referência de estrutura e funcionalidades: [malibusurf.com.br](https://malibusu
 Monólito full-stack em **Next.js**, único projeto cobrindo loja e admin (admin nas rotas `/admin`, protegidas por middleware). Evita duplicar autenticação/modelos de dados entre múltiplos serviços — abordagem mais simples e suficiente para o porte da loja, sem impedir evolução futura (ex: app mobile consumindo a mesma base via API).
 
 - **Banco de dados:** PostgreSQL via Prisma (ORM)
-- **Hospedagem:** Vercel (app) + Supabase (Postgres + armazenamento de imagens dos produtos)
+- **Hospedagem:** Vercel (app) + Render (Postgres) + Vercel Blob (armazenamento das imagens dos produtos)
 - **Autenticação:** Auth.js (NextAuth), email/senha. Campo `isAdmin` no `User` controla acesso ao `/admin` — sem sistema de papéis, já que só o dono usa o painel nesta fase
 - **Pagamento:** Mercado Pago (cartão parcelado, Pix com desconto, boleto)
 - **Envio:** Melhor Envio (cotação de frete por CEP no carrinho, geração de etiqueta no admin)
@@ -109,5 +109,5 @@ Restante do site é validado manualmente durante o desenvolvimento — sem meta 
 
 ## Infraestrutura e segredos
 
-- Deploy do app na Vercel; banco Postgres + storage de imagens no Supabase
+- Deploy do app na Vercel; banco Postgres no Render; storage de imagens no Vercel Blob
 - Segredos (chaves Mercado Pago, token Melhor Envio, credenciais do banco, secret do NextAuth) via variáveis de ambiente, nunca versionados no código
