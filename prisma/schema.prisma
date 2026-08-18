@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String?
+  email        String    @unique
+  passwordHash String
+  phone        String?
+  isAdmin      Boolean   @default(false)
+  addresses    Address[]
+  orders       Order[]
+  createdAt    DateTime  @default(now())
+}
+
+model Address {
+  id            String   @id @default(cuid())
+  user          User?    @relation(fields: [userId], references: [id])
+  userId        String?
+  label         String?
+  recipientName String
+  street        String
+  number        String
+  complement    String?
+  neighborhood  String
+  city          String
+  state         String
+  zipCode       String
+  createdAt     DateTime @default(now())
+}
+
+model Category {
+  id       String     @id @default(cuid())
+  name     String
+  slug     String     @unique
+  parent   Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
+  parentId String?
+  children Category[] @relation("CategoryToParent")
+  products Product[]
+}
+
+model Product {
+  id          String             @id @default(cuid())
+  name        String
+  slug        String             @unique
+  description String
+  brand       String?
+  active      Boolean            @default(true)
+  images      String[]
+  category    Category           @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  variations  ProductVariation[]
+  createdAt   DateTime           @default(now())
+}
+
+model ProductVariation {
+  id         String      @id @default(cuid())
+  product    Product     @relation(fields: [productId], references: [id])
+  productId  String
+  size       String
+  color      String
+  sku        String      @unique
+  priceCents Int
+  stock      Int         @default(0)
+  image      String?
+  orderItems OrderItem[]
+
+  @@unique([productId, size, color])
+}
+
+enum OrderStatus {
+  AWAITING_PAYMENT
+  PAID
+  PAID_STOCK_ISSUE
+  SHIPPED
+  DELIVERED
+  CANCELED
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  user            User?       @relation(fields: [userId], references: [id])
+  userId          String?
+  contactEmail    String
+  status          OrderStatus @default(AWAITING_PAYMENT)
+  shippingAddress Json
+  shippingCents   Int
+  totalCents      Int
+  paymentMethod   String?
+  mpPaymentId     String?     @unique
+  items           OrderItem[]
+  shipment        Shipment?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id          String           @id @default(cuid())
+  order       Order            @relation(fields: [orderId], references: [id])
+  orderId     String
+  variation   ProductVariation @relation(fields: [variationId], references: [id])
+  variationId String
+  quantity    Int
+  priceCents  Int
+}
+
+model Shipment {
+  id            String   @id @default(cuid())
+  order         Order    @relation(fields: [orderId], references: [id])
+  orderId       String   @unique
+  carrier       String?
+  trackingCode  String?
+  labelUrl      String?
+  melhorEnvioId String?
+  status        String   @default("pending")
+  createdAt     DateTime @default(now())
+}
+
+model StoreSettings {
+  id                 Int @id @default(1)
+  freeShippingCents  Int @default(39990)
+  pixDiscountPercent Int @default(5)
+  maxInstallments    Int @default(12)
+}
