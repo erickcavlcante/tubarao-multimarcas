@@ -5,7 +5,10 @@ import {
   removeLine,
   totalQuantity,
   parseStoredCart,
+  aggregateRequestedQuantities,
+  resolveQuantity,
   MAX_QUANTITY_PER_LINE,
+  MAX_CART_LINES,
   type CartLine,
 } from "./cart";
 
@@ -127,5 +130,91 @@ describe("parseStoredCart", () => {
   it("drops lines with a non-positive quantity", () => {
     expect(parseStoredCart([{ variationId: "v1", quantity: 0 }])).toEqual([]);
     expect(parseStoredCart([{ variationId: "v1", quantity: -2 }])).toEqual([]);
+  });
+});
+
+describe("aggregateRequestedQuantities", () => {
+  it("sums duplicate lines for the same variationId into one entry", () => {
+    const lines: CartLine[] = [
+      { variationId: "v1", quantity: 2 },
+      { variationId: "v1", quantity: 3 },
+    ];
+    expect(aggregateRequestedQuantities(lines)).toEqual(new Map([["v1", 5]]));
+  });
+
+  it("returns an empty Map for non-array input", () => {
+    expect(aggregateRequestedQuantities(null)).toEqual(new Map());
+    expect(aggregateRequestedQuantities("lixo")).toEqual(new Map());
+    expect(aggregateRequestedQuantities({ variationId: "v1", quantity: 2 })).toEqual(new Map());
+  });
+
+  it("drops malformed entries with missing or wrong-typed fields", () => {
+    const raw = [
+      { variationId: "v1", quantity: 2 },
+      { variationId: "v2" },
+      { quantity: 3 },
+      { variationId: 5, quantity: 3 },
+      { variationId: "v3", quantity: "muitos" },
+    ];
+    expect(aggregateRequestedQuantities(raw)).toEqual(new Map([["v1", 2]]));
+  });
+
+  it("drops NaN, Infinity, zero, and negative quantities", () => {
+    const raw = [
+      { variationId: "v1", quantity: Number.NaN },
+      { variationId: "v2", quantity: Number.POSITIVE_INFINITY },
+      { variationId: "v3", quantity: 0 },
+      { variationId: "v4", quantity: -5 },
+      { variationId: "v5", quantity: 4 },
+    ];
+    expect(aggregateRequestedQuantities(raw)).toEqual(new Map([["v5", 4]]));
+  });
+
+  it("floors fractional quantities", () => {
+    expect(aggregateRequestedQuantities([{ variationId: "v1", quantity: 2.9 }])).toEqual(
+      new Map([["v1", 2]])
+    );
+  });
+
+  it("truncates input longer than MAX_CART_LINES", () => {
+    const raw: CartLine[] = Array.from({ length: MAX_CART_LINES + 10 }, (_, i) => ({
+      variationId: `v${i}`,
+      quantity: 1,
+    }));
+    expect(aggregateRequestedQuantities(raw).size).toBe(MAX_CART_LINES);
+  });
+});
+
+describe("resolveQuantity", () => {
+  it("passes a quantity within stock through with adjusted: false", () => {
+    expect(resolveQuantity(3, 10)).toEqual({ quantity: 3, adjusted: false });
+  });
+
+  it("clamps a quantity above stock down with adjusted: true", () => {
+    expect(resolveQuantity(8, 3)).toEqual({ quantity: 3, adjusted: true });
+  });
+
+  it("caps a quantity above MAX_QUANTITY_PER_LINE", () => {
+    // Stock is not the limiting factor here, so the cap itself does not
+    // count as a stock-driven adjustment.
+    expect(resolveQuantity(MAX_QUANTITY_PER_LINE + 50, 1000)).toEqual({
+      quantity: MAX_QUANTITY_PER_LINE,
+      adjusted: false,
+    });
+  });
+
+  it("returns null (drop) for zero stock", () => {
+    expect(resolveQuantity(5, 0)).toBeNull();
+  });
+
+  it("bounds a huge/Infinity raw quantity by min(MAX_QUANTITY_PER_LINE, stock)", () => {
+    expect(resolveQuantity(Number.POSITIVE_INFINITY, 10)).toEqual({
+      quantity: 10,
+      adjusted: true,
+    });
+    expect(resolveQuantity(Number.POSITIVE_INFINITY, 1000)).toEqual({
+      quantity: MAX_QUANTITY_PER_LINE,
+      adjusted: false,
+    });
   });
 });

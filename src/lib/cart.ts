@@ -54,3 +54,38 @@ export function parseStoredCart(raw: unknown): CartLine[] {
       (l as CartLine).quantity > 0
   );
 }
+
+export const MAX_CART_LINES = 100;
+
+export function aggregateRequestedQuantities(lines: unknown): Map<string, number> {
+  const safeLines = (Array.isArray(lines) ? lines : [])
+    .filter(
+      (l) =>
+        typeof l === "object" &&
+        l !== null &&
+        typeof (l as CartLine).variationId === "string" &&
+        typeof (l as CartLine).quantity === "number" &&
+        Number.isFinite((l as CartLine).quantity) &&
+        (l as CartLine).quantity > 0
+    )
+    .slice(0, MAX_CART_LINES) as CartLine[];
+
+  const requested = new Map<string, number>();
+  for (const line of safeLines) {
+    const previous = requested.get(line.variationId) ?? 0;
+    requested.set(line.variationId, previous + Math.floor(line.quantity));
+  }
+  return requested;
+}
+
+export function resolveQuantity(
+  rawQuantity: number,
+  stock: number
+): { quantity: number; adjusted: boolean } | null {
+  const requested = Math.min(rawQuantity, MAX_QUANTITY_PER_LINE);
+  const quantity = Math.min(requested, stock);
+  if (quantity <= 0) {
+    return null;
+  }
+  return { quantity, adjusted: quantity !== requested };
+}
