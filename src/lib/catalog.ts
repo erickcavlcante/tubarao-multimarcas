@@ -78,3 +78,16 @@ export async function getFilterOptions() {
     brands: products.map((p) => p.brand).filter((b): b is string => !!b).sort(),
   };
 }
+
+export async function getPublicVariations(variationIds: string[]) {
+  if (variationIds.length === 0) {
+    return [];
+  }
+  return prisma.productVariation.findMany({
+    where: {
+      id: { in: variationIds },
+      product: { active: true },
+    },
+    include: { product: true },
+  });
+}
