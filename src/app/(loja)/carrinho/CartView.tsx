@@ -46,6 +46,11 @@ export function CartView({
   if (!cart || cart.items.length === 0) {
     return (
       <div>
+        {cart && cart.droppedCount > 0 && (
+          <p style={{ color: "#b45309" }}>
+            {cart.droppedCount} item(ns) saíram do carrinho por indisponibilidade.
+          </p>
+        )}
         <p>Seu carrinho está vazio.</p>
         <Link href="/produtos">Ver produtos</Link>
       </div>
