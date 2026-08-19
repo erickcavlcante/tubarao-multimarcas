@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getCategories, getRecentActiveProducts } from "@/lib/catalog";
 import { ProductCard } from "./_components/ProductCard";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [categories, products, settings] = await Promise.all([
     getCategories(),
