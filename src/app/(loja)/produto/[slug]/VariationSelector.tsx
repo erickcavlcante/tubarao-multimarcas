@@ -48,6 +48,7 @@ export function VariationSelector({
             onClick={() => {
               setSelectedId(v.id);
               setAdded(false);
+              setQuantity(1);
             }}
             disabled={v.stock === 0}
             style={{
