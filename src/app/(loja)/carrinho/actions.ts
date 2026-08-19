@@ -36,16 +36,25 @@ export async function loadCart(lines: CartLine[]): Promise<LoadedCart> {
     )
     .slice(0, MAX_LINES);
 
-  const variations = await getPublicVariations(safeLines.map((l) => l.variationId));
+  // Soma linhas repetidas da mesma variação ANTES de limitar pelo estoque.
+  // Sem isso, N linhas do mesmo item passariam cada uma pelo teto do estoque
+  // cheio, e o carrinho poderia representar N x o estoque real.
+  const requestedByVariation = new Map<string, number>();
+  for (const line of safeLines) {
+    const previous = requestedByVariation.get(line.variationId) ?? 0;
+    requestedByVariation.set(line.variationId, previous + Math.floor(line.quantity));
+  }
+
+  const variations = await getPublicVariations([...requestedByVariation.keys()]);
   const byId = new Map(variations.map((v) => [v.id, v]));
 
   const items: CartItem[] = [];
-  for (const line of safeLines) {
-    const variation = byId.get(line.variationId);
+  for (const [variationId, rawQuantity] of requestedByVariation) {
+    const variation = byId.get(variationId);
     if (!variation) {
       continue;
     }
-    const requested = Math.min(Math.floor(line.quantity), MAX_QUANTITY_PER_LINE);
+    const requested = Math.min(rawQuantity, MAX_QUANTITY_PER_LINE);
     const quantity = Math.min(requested, variation.stock);
     if (quantity <= 0) {
       continue;
@@ -68,6 +77,6 @@ export async function loadCart(lines: CartLine[]): Promise<LoadedCart> {
   return {
     items,
     subtotalCents: items.reduce((sum, i) => sum + i.lineTotalCents, 0),
-    droppedCount: safeLines.length - items.length,
+    droppedCount: requestedByVariation.size - items.length,
   };
 }
