@@ -19,6 +19,7 @@
 - Imagens de produto nesta fase são **links colados pelo admin** (texto), não upload de arquivo — decisão do usuário pra não precisar criar conta na Vercel ainda. O campo `Product.images` (`String[]`) recebe as URLs digitadas.
 - Todas as páginas deste plano ficam sob `/admin`, já protegido pelo `src/proxy.ts` e `src/app/admin/layout.tsx` do Plano 1 — nenhuma proteção de acesso adicional é necessária nestas páginas.
 - Slugs (`Product.slug`, `Category.slug`) são gerados com a função `slugify()` da Task 1 — nunca duplicar essa lógica em outro arquivo.
+- Toda Server Action que faz mutação (create/update/delete) deve chamar `await requireAdmin()` (de `src/lib/require-admin.ts`, criado na Task 4) como primeira linha do corpo — depender só do redirect da `/admin/layout.tsx` não é suficiente, o endpoint da action é alcançável independente da página.
 
 ---
 
@@ -503,15 +504,31 @@ function parseImages(formData: FormData): string[] { /* ... */ }
 export async function createProduct(/* ... */) { /* ... */ }
 ```
 
-Duas mudanças:
+Nota de segurança (descoberta durante a Task 4 deste plano): toda Server Action que faz mutação precisa verificar autenticação/autorização por conta própria — depender só do redirect da `/admin/layout.tsx` não basta, porque o endpoint da Server Action é alcançável independente da página (o id da action fica no bundle JS do cliente). A Task 4 já criou `src/lib/require-admin.ts`:
+```typescript
+import { auth } from "@/lib/auth";
+
+export async function requireAdmin() {
+  const session = await auth();
+  if (!session?.user?.isAdmin) {
+    throw new Error("Não autorizado");
+  }
+}
+```
+Todas as quatro funções novas abaixo devem chamar `await requireAdmin();` como a primeira linha do corpo, antes de ler `formData` ou tocar no banco.
+
+Três mudanças:
 1. Adicionar `import { revalidatePath } from "next/cache";` junto com os outros imports do topo (não duplicar o bloco de imports — só acrescentar essa linha às já existentes: `prisma`, `slugify`, `redirect`).
-2. Adicionar as quatro funções abaixo **ao final do arquivo**, depois de `createProduct` — mantendo `createProduct` e `parseImages` exatamente como estão:
+2. Adicionar `import { requireAdmin } from "@/lib/require-admin";` junto com os mesmos imports do topo.
+3. Adicionar as quatro funções abaixo **ao final do arquivo**, depois de `createProduct` — mantendo `createProduct` e `parseImages` exatamente como estão:
 
 ```typescript
 export async function updateProduct(
   _prevState: ProductActionState,
   formData: FormData
 ): Promise<ProductActionState> {
+  await requireAdmin();
+
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
@@ -553,6 +570,8 @@ export async function createVariation(
   _prevState: ProductActionState,
   formData: FormData
 ): Promise<ProductActionState> {
+  await requireAdmin();
+
   const productId = String(formData.get("productId") ?? "");
   const size = String(formData.get("size") ?? "").trim();
   const color = String(formData.get("color") ?? "").trim();
@@ -593,6 +612,8 @@ export async function updateVariation(
   _prevState: ProductActionState,
   formData: FormData
 ): Promise<ProductActionState> {
+  await requireAdmin();
+
   const id = String(formData.get("id") ?? "");
   const productId = String(formData.get("productId") ?? "");
   const priceInput = String(formData.get("price") ?? "").trim();
@@ -620,6 +641,8 @@ export async function deleteVariation(
   _prevState: ProductActionState,
   formData: FormData
 ): Promise<ProductActionState> {
+  await requireAdmin();
+
   const id = String(formData.get("id") ?? "");
   const productId = String(formData.get("productId") ?? "");
 
