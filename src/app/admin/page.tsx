@@ -12,6 +12,9 @@ export default function AdminDashboardPage() {
         <li>
           <Link href="/admin/categorias">Categorias</Link>
         </li>
+        <li>
+          <Link href="/admin/configuracoes">Configurações</Link>
+        </li>
       </ul>
     </div>
   );
