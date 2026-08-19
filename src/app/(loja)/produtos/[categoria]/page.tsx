@@ -1,0 +1,71 @@
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { getFilteredProducts, getFilterOptions, type ProductFilters } from "@/lib/catalog";
+import { ProductCard } from "../../_components/ProductCard";
+
+export default async function CategoriaPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ categoria: string }>;
+  searchParams: Promise<Record<string, string | undefined>>;
+}) {
+  const { categoria } = await params;
+  const search = await searchParams;
+
+  const category = await prisma.category.findUnique({ where: { slug: categoria } });
+  if (!category) {
+    notFound();
+  }
+
+  const filters: ProductFilters = {
+    categorySlug: categoria,
+    size: search.tamanho || undefined,
+    color: search.cor || undefined,
+    brand: search.marca || undefined,
+    sort: (search.ordenar as ProductFilters["sort"]) || undefined,
+  };
+
+  const [products, options, settings] = await Promise.all([
+    getFilteredProducts(filters),
+    getFilterOptions(),
+    prisma.storeSettings.findUnique({ where: { id: 1 } }),
+  ]);
+  const pixDiscountPercent = settings?.pixDiscountPercent ?? 0;
+
+  return (
+    <div>
+      <h1>{category.name}</h1>
+      <form method="get">
+        <select name="tamanho" defaultValue={search.tamanho ?? ""}>
+          <option value="">Todos os tamanhos</option>
+          {options.sizes.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <select name="cor" defaultValue={search.cor ?? ""}>
+          <option value="">Todas as cores</option>
+          {options.colors.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <select name="ordenar" defaultValue={search.ordenar ?? ""}>
+          <option value="">Mais recentes</option>
+          <option value="menor-preco">Menor preço</option>
+          <option value="maior-preco">Maior preço</option>
+        </select>
+        <button type="submit">Filtrar</button>
+      </form>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 }}>
+        {products.map((p) => (
+          <ProductCard key={p.id} product={p} pixDiscountPercent={pixDiscountPercent} />
+        ))}
+      </div>
+      {products.length === 0 && <p>Nenhum produto encontrado nesta categoria.</p>}
+    </div>
+  );
+}
