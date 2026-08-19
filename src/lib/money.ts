@@ -10,3 +10,7 @@ export function parsePriceToCents(input: string): number | null {
 export function centsToReais(cents: number): string {
   return (cents / 100).toFixed(2).replace(".", ",");
 }
+
+export function applyPixDiscount(cents: number, discountPercent: number): number {
+  return Math.round(cents * (1 - discountPercent / 100));
+}
