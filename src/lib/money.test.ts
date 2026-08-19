@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parsePriceToCents, centsToReais } from "./money";
+import { parsePriceToCents, centsToReais, applyPixDiscount } from "./money";
 
 describe("parsePriceToCents", () => {
   it("parses a simple price", () => {
@@ -27,5 +27,21 @@ describe("parsePriceToCents", () => {
 describe("centsToReais", () => {
   it("formats cents as a comma-decimal string", () => {
     expect(centsToReais(12990)).toBe("129,90");
+  });
+});
+
+describe("applyPixDiscount", () => {
+  it("returns the original cents unchanged for a 0% discount", () => {
+    expect(applyPixDiscount(7990, 0)).toBe(7990);
+  });
+
+  it("applies a normal percentage discount, rounding to the nearest cent", () => {
+    // 7990 * 0.95 = 7590.5 -> rounds to 7591
+    expect(applyPixDiscount(7990, 5)).toBe(7591);
+  });
+
+  it("pins the Math.round rounding boundary for an odd-cent case", () => {
+    // 101 * 0.9 = 90.9 -> rounds to 91
+    expect(applyPixDiscount(101, 10)).toBe(91);
   });
 });
