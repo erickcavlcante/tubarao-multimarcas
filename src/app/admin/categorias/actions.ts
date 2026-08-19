@@ -16,6 +16,16 @@ export async function createCategory(
   const name = String(formData.get("name") ?? "").trim();
   const parentId = String(formData.get("parentId") ?? "") || null;
 
+  const rawWeight = String(formData.get("defaultWeight") ?? "").trim();
+  let defaultWeightGrams: number | null = null;
+  if (rawWeight) {
+    const parsed = Number(rawWeight);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      return { error: "Peso padrão deve ser um número inteiro de gramas" };
+    }
+    defaultWeightGrams = parsed;
+  }
+
   if (!name) {
     return { error: "Nome é obrigatório" };
   }
@@ -28,7 +38,7 @@ export async function createCategory(
   }
 
   await prisma.category.create({
-    data: { name, slug, parentId },
+    data: { name, slug, parentId, defaultWeightGrams },
   });
 
   revalidatePath("/admin/categorias");

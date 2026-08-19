@@ -23,6 +23,12 @@ export function CategoryForm({ categories }: { categories: Category[] }) {
           </option>
         ))}
       </select>
+      <input
+        type="number"
+        name="defaultWeight"
+        min={1}
+        placeholder="Peso padrão em gramas (opcional)"
+      />
       {state?.error && <p style={{ color: "red" }}>{state.error}</p>}
       <button type="submit" disabled={pending}>
         Criar categoria

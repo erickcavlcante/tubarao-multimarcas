@@ -13,6 +13,7 @@ export default async function CategoriasPage() {
           <li key={c.id}>
             {c.name}
             {c.parentId ? " (subcategoria)" : ""}
+            {c.defaultWeightGrams ? ` — ${c.defaultWeightGrams}g` : ""}
           </li>
         ))}
       </ul>
