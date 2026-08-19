@@ -12,9 +12,21 @@ type Variation = {
   sku: string;
   priceCents: number;
   stock: number;
+  weightGrams: number;
 };
 
-function VariationRow({ variation, productId }: { variation: Variation; productId: string }) {
+function VariationRow({
+  variation,
+  productId,
+  suggestedWeightGrams,
+}: {
+  variation: Variation;
+  productId: string;
+  suggestedWeightGrams: number;
+}) {
+  // suggestedWeightGrams is only used by the "add variation" form below;
+  // this row edits the variation's existing weight, not the suggestion.
+  void suggestedWeightGrams;
   const [updateState, updateActionBound, updatePending] = useActionState<
     ProductActionState,
     FormData
@@ -35,6 +47,7 @@ function VariationRow({ variation, productId }: { variation: Variation; productI
           <input type="hidden" name="productId" value={productId} />
           <input type="text" name="price" defaultValue={centsToReais(variation.priceCents)} size={6} />
           <input type="number" name="stock" defaultValue={variation.stock} min={0} size={4} />
+          <input type="number" name="weightGrams" defaultValue={variation.weightGrams} min={1} size={5} />
           <button type="submit" disabled={updatePending}>
             Salvar
           </button>
@@ -58,9 +71,11 @@ function VariationRow({ variation, productId }: { variation: Variation; productI
 export function VariationsManager({
   variations,
   productId,
+  suggestedWeightGrams,
 }: {
   variations: Variation[];
   productId: string;
+  suggestedWeightGrams: number;
 }) {
   const [createState, createActionBound, createPending] = useActionState<
     ProductActionState,
@@ -77,12 +92,18 @@ export function VariationsManager({
             <th>Cor</th>
             <th>SKU</th>
             <th>Preço (R$) / Estoque</th>
+            <th>Peso (g)</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           {variations.map((v) => (
-            <VariationRow key={v.id} variation={v} productId={productId} />
+            <VariationRow
+              key={v.id}
+              variation={v}
+              productId={productId}
+              suggestedWeightGrams={suggestedWeightGrams}
+            />
           ))}
         </tbody>
       </table>
@@ -94,6 +115,14 @@ export function VariationsManager({
         <input type="text" name="color" placeholder="Cor (ex: Azul)" required />
         <input type="text" name="price" placeholder="Preço (ex: 129,90)" required />
         <input type="number" name="stock" placeholder="Estoque" min={0} defaultValue={0} />
+        <input
+          type="number"
+          name="weightGrams"
+          placeholder="Peso (g)"
+          min={1}
+          defaultValue={suggestedWeightGrams}
+          required
+        />
         <button type="submit" disabled={createPending}>
           Adicionar
         </button>

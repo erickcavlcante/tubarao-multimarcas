@@ -90,6 +90,10 @@ export async function createVariation(
   const color = String(formData.get("color") ?? "").trim();
   const priceInput = String(formData.get("price") ?? "").trim();
   const stock = Number(formData.get("stock") ?? 0);
+  const weightGrams = Number(formData.get("weightGrams") ?? 0);
+  if (!Number.isInteger(weightGrams) || weightGrams < 1) {
+    return { error: "Peso deve ser um número inteiro de gramas, maior que zero" };
+  }
 
   if (!productId || !size || !color || !priceInput) {
     return { error: "Tamanho, cor e preço são obrigatórios" };
@@ -111,7 +115,7 @@ export async function createVariation(
 
   try {
     await prisma.productVariation.create({
-      data: { productId, size, color, sku, priceCents, stock: Math.max(0, stock) },
+      data: { productId, size, color, sku, priceCents, stock: Math.max(0, stock), weightGrams },
     });
   } catch {
     return { error: "Não foi possível criar a variação (SKU duplicado?)" };
@@ -131,6 +135,10 @@ export async function updateVariation(
   const productId = String(formData.get("productId") ?? "");
   const priceInput = String(formData.get("price") ?? "").trim();
   const stock = Number(formData.get("stock") ?? 0);
+  const weightGrams = Number(formData.get("weightGrams") ?? 0);
+  if (!Number.isInteger(weightGrams) || weightGrams < 1) {
+    return { error: "Peso deve ser um número inteiro de gramas, maior que zero" };
+  }
 
   if (!id || !priceInput) {
     return { error: "Preço é obrigatório" };
@@ -143,7 +151,7 @@ export async function updateVariation(
 
   await prisma.productVariation.update({
     where: { id },
-    data: { priceCents, stock: Math.max(0, stock) },
+    data: { priceCents, stock: Math.max(0, stock), weightGrams },
   });
 
   revalidatePath(`/admin/produtos/${productId}`);

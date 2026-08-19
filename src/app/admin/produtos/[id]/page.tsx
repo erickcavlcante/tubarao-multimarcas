@@ -13,7 +13,10 @@ export default async function EditarProdutoPage({
 
   const product = await prisma.product.findUnique({
     where: { id },
-    include: { variations: { orderBy: [{ size: "asc" }, { color: "asc" }] } },
+    include: {
+      category: true,
+      variations: { orderBy: [{ size: "asc" }, { color: "asc" }] },
+    },
   });
 
   if (!product) {
@@ -21,6 +24,9 @@ export default async function EditarProdutoPage({
   }
 
   const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
+  const settings = await prisma.storeSettings.findUnique({ where: { id: 1 } });
+  const suggestedWeightGrams =
+    product.category.defaultWeightGrams ?? settings?.defaultWeightGrams ?? 300;
 
   return (
     <div>
@@ -38,7 +44,11 @@ export default async function EditarProdutoPage({
           images: product.images,
         }}
       />
-      <VariationsManager variations={product.variations} productId={product.id} />
+      <VariationsManager
+        variations={product.variations}
+        productId={product.id}
+        suggestedWeightGrams={suggestedWeightGrams}
+      />
     </div>
   );
 }
