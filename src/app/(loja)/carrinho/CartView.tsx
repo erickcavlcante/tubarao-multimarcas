@@ -16,17 +16,23 @@ export function CartView({
   const { lines, ready, updateItem, removeItem } = useCart();
   const [cart, setCart] = useState<LoadedCart | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!ready) {
       return;
     }
     let cancelled = false;
-    setLoading(true);
     loadCart(lines)
       .then((result) => {
         if (!cancelled) {
           setCart(result);
+          setError(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError(true);
         }
       })
       .finally(() => {
@@ -41,6 +47,16 @@ export function CartView({
 
   if (!ready || loading) {
     return <p>Carregando carrinho...</p>;
+  }
+
+  if (error && !cart) {
+    return (
+      <div>
+        <p style={{ color: "#b91c1c" }}>
+          Não foi possível carregar seu carrinho. Verifique sua conexão e tente novamente.
+        </p>
+      </div>
+    );
   }
 
   if (!cart || cart.items.length === 0) {
