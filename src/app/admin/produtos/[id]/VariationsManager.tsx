@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { createVariation, updateVariation, deleteVariation } from "../actions";
 import type { ProductActionState } from "../actions";
+import { centsToReais } from "@/lib/money";
 
 type Variation = {
   id: string;
@@ -12,10 +13,6 @@ type Variation = {
   priceCents: number;
   stock: number;
 };
-
-function centsToReais(cents: number): string {
-  return (cents / 100).toFixed(2).replace(".", ",");
-}
 
 function VariationRow({ variation, productId }: { variation: Variation; productId: string }) {
   const [updateState, updateActionBound, updatePending] = useActionState<

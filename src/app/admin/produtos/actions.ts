@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
+import { parsePriceToCents } from "@/lib/money";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/require-admin";
 import { revalidatePath } from "next/cache";
@@ -104,8 +105,8 @@ export async function createVariation(
     return { error: "Tamanho, cor e preço são obrigatórios" };
   }
 
-  const priceCents = Math.round(Number(priceInput.replace(",", ".")) * 100);
-  if (!Number.isFinite(priceCents) || priceCents <= 0) {
+  const priceCents = parsePriceToCents(priceInput);
+  if (priceCents === null) {
     return { error: "Preço inválido" };
   }
 
@@ -145,8 +146,8 @@ export async function updateVariation(
     return { error: "Preço é obrigatório" };
   }
 
-  const priceCents = Math.round(Number(priceInput.replace(",", ".")) * 100);
-  if (!Number.isFinite(priceCents) || priceCents <= 0) {
+  const priceCents = parsePriceToCents(priceInput);
+  if (priceCents === null) {
     return { error: "Preço inválido" };
   }
 
