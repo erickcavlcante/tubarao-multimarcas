@@ -10,7 +10,7 @@ export default async function CarrinhoPage() {
     <div>
       <h1>Carrinho</h1>
       <CartView
-        freeShippingCents={settings?.freeShippingCents ?? 0}
+        freeShippingCents={settings?.freeShippingCents ?? Number.POSITIVE_INFINITY}
         pixDiscountPercent={settings?.pixDiscountPercent ?? 0}
       />
     </div>

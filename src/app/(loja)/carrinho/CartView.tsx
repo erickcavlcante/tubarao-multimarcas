@@ -154,11 +154,12 @@ export function CartView({
             R$ {centsToReais(pixSubtotalCents)} no Pix ({pixDiscountPercent}% OFF)
           </p>
         )}
-        {missingForFreeShipping > 0 ? (
-          <p>Faltam R$ {centsToReais(missingForFreeShipping)} para ganhar frete grátis.</p>
-        ) : (
-          <p>Você ganhou frete grátis!</p>
-        )}
+        {Number.isFinite(freeShippingCents) &&
+          (missingForFreeShipping > 0 ? (
+            <p>Faltam R$ {centsToReais(missingForFreeShipping)} para ganhar frete grátis.</p>
+          ) : (
+            <p>Você ganhou frete grátis!</p>
+          ))}
         <p style={{ color: "#666" }}>O frete é calculado na próxima etapa.</p>
         <Link href="/checkout">
           <button type="button" style={{ padding: "12px 24px", marginTop: 8 }}>
