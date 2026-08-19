@@ -69,19 +69,9 @@ export async function updateProduct(
     return { error: "Produto não encontrado" };
   }
 
-  let slug = current.slug;
-  if (name !== current.name) {
-    const newSlug = slugify(name);
-    const collision = await prisma.product.findFirst({ where: { slug: newSlug, NOT: { id } } });
-    if (collision) {
-      return { error: "Já existe outro produto com esse nome" };
-    }
-    slug = newSlug;
-  }
-
   await prisma.product.update({
     where: { id },
-    data: { name, slug, description, brand, categoryId, active, images },
+    data: { name, slug: current.slug, description, brand, categoryId, active, images },
   });
 
   revalidatePath(`/admin/produtos/${id}`);
