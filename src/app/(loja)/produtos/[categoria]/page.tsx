@@ -3,15 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { getFilteredProducts, getFilterOptions, type ProductFilters } from "@/lib/catalog";
 import { ProductCard } from "../../_components/ProductCard";
 
+export const dynamic = "force-dynamic";
+
+function firstValue(v: string | string[] | undefined): string | undefined {
+  return (Array.isArray(v) ? v[0] : v) || undefined;
+}
+
 export default async function CategoriaPage({
   params,
   searchParams,
 }: {
   params: Promise<{ categoria: string }>;
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { categoria } = await params;
   const search = await searchParams;
+  const tamanho = firstValue(search.tamanho);
+  const cor = firstValue(search.cor);
+  const ordenar = firstValue(search.ordenar);
 
   const category = await prisma.category.findUnique({ where: { slug: categoria } });
   if (!category) {
@@ -20,10 +29,10 @@ export default async function CategoriaPage({
 
   const filters: ProductFilters = {
     categorySlug: categoria,
-    size: search.tamanho || undefined,
-    color: search.cor || undefined,
-    brand: search.marca || undefined,
-    sort: (search.ordenar as ProductFilters["sort"]) || undefined,
+    size: tamanho,
+    color: cor,
+    brand: firstValue(search.marca),
+    sort: ordenar as ProductFilters["sort"],
   };
 
   const [products, options, settings] = await Promise.all([
@@ -37,7 +46,7 @@ export default async function CategoriaPage({
     <div>
       <h1>{category.name}</h1>
       <form method="get">
-        <select name="tamanho" defaultValue={search.tamanho ?? ""}>
+        <select name="tamanho" defaultValue={tamanho ?? ""}>
           <option value="">Todos os tamanhos</option>
           {options.sizes.map((s) => (
             <option key={s} value={s}>
@@ -45,7 +54,7 @@ export default async function CategoriaPage({
             </option>
           ))}
         </select>
-        <select name="cor" defaultValue={search.cor ?? ""}>
+        <select name="cor" defaultValue={cor ?? ""}>
           <option value="">Todas as cores</option>
           {options.colors.map((c) => (
             <option key={c} value={c}>
@@ -53,7 +62,7 @@ export default async function CategoriaPage({
             </option>
           ))}
         </select>
-        <select name="ordenar" defaultValue={search.ordenar ?? ""}>
+        <select name="ordenar" defaultValue={ordenar ?? ""}>
           <option value="">Mais recentes</option>
           <option value="menor-preco">Menor preço</option>
           <option value="maior-preco">Maior preço</option>

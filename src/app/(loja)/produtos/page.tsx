@@ -2,17 +2,27 @@ import { prisma } from "@/lib/prisma";
 import { getFilteredProducts, getFilterOptions, type ProductFilters } from "@/lib/catalog";
 import { ProductCard } from "../_components/ProductCard";
 
+export const dynamic = "force-dynamic";
+
+function firstValue(v: string | string[] | undefined): string | undefined {
+  return (Array.isArray(v) ? v[0] : v) || undefined;
+}
+
 export default async function ProdutosPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const tamanho = firstValue(params.tamanho);
+  const cor = firstValue(params.cor);
+  const marca = firstValue(params.marca);
+  const ordenar = firstValue(params.ordenar);
   const filters: ProductFilters = {
-    size: params.tamanho || undefined,
-    color: params.cor || undefined,
-    brand: params.marca || undefined,
-    sort: (params.ordenar as ProductFilters["sort"]) || undefined,
+    size: tamanho,
+    color: cor,
+    brand: marca,
+    sort: ordenar as ProductFilters["sort"],
   };
 
   const [products, options, settings] = await Promise.all([
@@ -26,7 +36,7 @@ export default async function ProdutosPage({
     <div>
       <h1>Produtos</h1>
       <form method="get">
-        <select name="tamanho" defaultValue={params.tamanho ?? ""}>
+        <select name="tamanho" defaultValue={tamanho ?? ""}>
           <option value="">Todos os tamanhos</option>
           {options.sizes.map((s) => (
             <option key={s} value={s}>
@@ -34,7 +44,7 @@ export default async function ProdutosPage({
             </option>
           ))}
         </select>
-        <select name="cor" defaultValue={params.cor ?? ""}>
+        <select name="cor" defaultValue={cor ?? ""}>
           <option value="">Todas as cores</option>
           {options.colors.map((c) => (
             <option key={c} value={c}>
@@ -42,7 +52,7 @@ export default async function ProdutosPage({
             </option>
           ))}
         </select>
-        <select name="marca" defaultValue={params.marca ?? ""}>
+        <select name="marca" defaultValue={marca ?? ""}>
           <option value="">Todas as marcas</option>
           {options.brands.map((b) => (
             <option key={b} value={b}>
@@ -50,7 +60,7 @@ export default async function ProdutosPage({
             </option>
           ))}
         </select>
-        <select name="ordenar" defaultValue={params.ordenar ?? ""}>
+        <select name="ordenar" defaultValue={ordenar ?? ""}>
           <option value="">Mais recentes</option>
           <option value="menor-preco">Menor preço</option>
           <option value="maior-preco">Maior preço</option>
