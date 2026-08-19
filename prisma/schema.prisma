@@ -35,13 +35,14 @@ model Address {
 }
 
 model Category {
-  id       String     @id @default(cuid())
-  name     String
-  slug     String     @unique
-  parent   Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
-  parentId String?
-  children Category[] @relation("CategoryToParent")
-  products Product[]
+  id                 String     @id @default(cuid())
+  name               String
+  slug               String     @unique
+  defaultWeightGrams Int?
+  parent             Category?  @relation("CategoryToParent", fields: [parentId], references: [id])
+  parentId           String?
+  children           Category[] @relation("CategoryToParent")
+  products           Product[]
 }
 
 model Product {
@@ -59,16 +60,17 @@ model Product {
 }
 
 model ProductVariation {
-  id         String      @id @default(cuid())
-  product    Product     @relation(fields: [productId], references: [id])
-  productId  String
-  size       String
-  color      String
-  sku        String      @unique
-  priceCents Int
-  stock      Int         @default(0)
-  image      String?
-  orderItems OrderItem[]
+  id          String      @id @default(cuid())
+  product     Product     @relation(fields: [productId], references: [id])
+  productId   String
+  size        String
+  color       String
+  sku         String      @unique
+  priceCents  Int
+  stock       Int         @default(0)
+  weightGrams Int         @default(300)
+  image       String?
+  orderItems  OrderItem[]
 
   @@unique([productId, size, color])
 }
@@ -122,8 +124,13 @@ model Shipment {
 }
 
 model StoreSettings {
-  id                 Int @id @default(1)
-  freeShippingCents  Int @default(39990)
-  pixDiscountPercent Int @default(5)
-  maxInstallments    Int @default(12)
+  id                 Int     @id @default(1)
+  freeShippingCents  Int     @default(39990)
+  pixDiscountPercent Int     @default(5)
+  maxInstallments    Int     @default(12)
+  originZipCode      String?
+  packageWidthCm     Int     @default(30)
+  packageHeightCm    Int     @default(5)
+  packageLengthCm    Int     @default(40)
+  defaultWeightGrams Int     @default(300)
 }
