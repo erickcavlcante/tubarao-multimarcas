@@ -91,8 +91,7 @@ export function VariationsManager({
             <th>Tamanho</th>
             <th>Cor</th>
             <th>SKU</th>
-            <th>Preço (R$) / Estoque</th>
-            <th>Peso (g)</th>
+            <th>Preço (R$) / Estoque / Peso (g)</th>
             <th></th>
           </tr>
         </thead>
