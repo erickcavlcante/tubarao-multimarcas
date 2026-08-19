@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/require-admin";
 
 export type ProductActionState = { error?: string } | undefined;
 
@@ -18,6 +19,8 @@ export async function createProduct(
   _prevState: ProductActionState,
   formData: FormData
 ): Promise<ProductActionState> {
+  await requireAdmin();
+
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const brand = String(formData.get("brand") ?? "").trim() || null;

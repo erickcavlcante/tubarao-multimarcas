@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slug";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/require-admin";
 
 type CategoryActionState = { error?: string } | undefined;
 
@@ -10,6 +11,8 @@ export async function createCategory(
   _prevState: CategoryActionState,
   formData: FormData
 ): Promise<CategoryActionState> {
+  await requireAdmin();
+
   const name = String(formData.get("name") ?? "").trim();
   const parentId = String(formData.get("parentId") ?? "") || null;
 
