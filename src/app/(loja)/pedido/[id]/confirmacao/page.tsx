@@ -6,6 +6,18 @@ import type { ShippingAddress } from "@/lib/address";
 import { ClearCart } from "./ClearCart";
 
 export const dynamic = "force-dynamic";
+export const metadata = { robots: { index: false, follow: false } };
+
+const STATUS_MESSAGE: Record<string, string> = {
+  AWAITING_PAYMENT:
+    "O pagamento ainda não foi processado — a loja entrará em contato pelo email informado.",
+  PAID: "Pagamento confirmado. Estamos preparando seu pedido para envio.",
+  PAID_STOCK_ISSUE:
+    "Pagamento confirmado, mas houve um problema com o estoque de um item. A loja entrará em contato.",
+  SHIPPED: "Seu pedido foi enviado.",
+  DELIVERED: "Seu pedido foi entregue.",
+  CANCELED: "Este pedido foi cancelado.",
+};
 
 export default async function ConfirmacaoPage({
   params,
@@ -70,9 +82,7 @@ export default async function ConfirmacaoPage({
       <p>Frete: {order.shippingCents > 0 ? `R$ ${centsToReais(order.shippingCents)}` : "a calcular"}</p>
       <p style={{ fontWeight: "bold" }}>Total: R$ {centsToReais(order.totalCents)}</p>
 
-      <p style={{ color: "#666" }}>
-        O pagamento ainda não foi processado — a loja entrará em contato pelo email informado.
-      </p>
+      <p style={{ color: "#666" }}>{STATUS_MESSAGE[order.status] ?? ""}</p>
       <Link href="/produtos">Continuar comprando</Link>
     </div>
   );
