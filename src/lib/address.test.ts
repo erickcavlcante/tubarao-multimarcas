@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseAddress, isValidEmail } from "./address";
+import { parseAddress, isValidEmail, readShippingAddress } from "./address";
 
 const validForm = {
   recipientName: "Erick Cavalcante",
@@ -52,6 +52,58 @@ describe("parseAddress", () => {
   it("trims surrounding whitespace from every field", () => {
     const result = parseAddress({ ...validForm, city: "  São Paulo  " });
     expect("address" in result && result.address.city).toBe("São Paulo");
+  });
+});
+
+describe("readShippingAddress", () => {
+  const validAddress = {
+    recipientName: "Erick Cavalcante",
+    zipCode: "01001000",
+    street: "Praça da Sé",
+    number: "100",
+    complement: "apto 12",
+    neighborhood: "Sé",
+    city: "São Paulo",
+    state: "SP",
+  };
+
+  it("round-trips a valid address", () => {
+    expect(readShippingAddress(validAddress)).toEqual(validAddress);
+  });
+
+  it("returns null for null, a string or a number", () => {
+    expect(readShippingAddress(null)).toBe(null);
+    expect(readShippingAddress("endereço")).toBe(null);
+    expect(readShippingAddress(42)).toBe(null);
+  });
+
+  it("returns null when a required field is missing", () => {
+    const fields: (keyof typeof validAddress)[] = [
+      "recipientName",
+      "zipCode",
+      "street",
+      "number",
+      "neighborhood",
+      "city",
+      "state",
+    ];
+    for (const field of fields) {
+      const rest: Record<string, unknown> = { ...validAddress };
+      delete rest[field];
+      expect(readShippingAddress(rest)).toBe(null);
+    }
+  });
+
+  it("returns null when a required field is an empty string", () => {
+    expect(readShippingAddress({ ...validAddress, city: "" })).toBe(null);
+  });
+
+  it("turns a missing complement into null instead of failing", () => {
+    const rest: Record<string, unknown> = { ...validAddress };
+    delete rest.complement;
+    const result = readShippingAddress(rest);
+    expect(result).not.toBe(null);
+    expect(result?.complement).toBe(null);
   });
 });
 

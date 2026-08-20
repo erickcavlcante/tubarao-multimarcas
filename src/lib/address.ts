@@ -52,6 +52,39 @@ export function parseAddress(
   };
 }
 
+export function readShippingAddress(value: unknown): ShippingAddress | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  const candidate = value as Record<string, unknown>;
+  const requiredStrings = [
+    "recipientName",
+    "zipCode",
+    "street",
+    "number",
+    "neighborhood",
+    "city",
+    "state",
+  ] as const;
+
+  for (const key of requiredStrings) {
+    if (typeof candidate[key] !== "string" || !(candidate[key] as string)) {
+      return null;
+    }
+  }
+
+  return {
+    recipientName: candidate.recipientName as string,
+    zipCode: candidate.zipCode as string,
+    street: candidate.street as string,
+    number: candidate.number as string,
+    complement: typeof candidate.complement === "string" ? candidate.complement : null,
+    neighborhood: candidate.neighborhood as string,
+    city: candidate.city as string,
+    state: candidate.state as string,
+  };
+}
+
 export function isValidEmail(value: string): boolean {
   const trimmed = value.trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);

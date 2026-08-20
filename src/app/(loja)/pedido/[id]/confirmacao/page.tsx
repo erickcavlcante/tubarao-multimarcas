@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { centsToReais } from "@/lib/money";
-import type { ShippingAddress } from "@/lib/address";
+import { readShippingAddress } from "@/lib/address";
 import { ClearCart } from "./ClearCart";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +41,7 @@ export default async function ConfirmacaoPage({
     notFound();
   }
 
-  const address = order.shippingAddress as unknown as ShippingAddress;
+  const address = readShippingAddress(order.shippingAddress);
 
   return (
     <div>
@@ -66,16 +66,20 @@ export default async function ConfirmacaoPage({
       </ul>
 
       <h2>Entrega</h2>
-      <p>
-        {address.recipientName}
-        <br />
-        {address.street}, {address.number}
-        {address.complement ? ` - ${address.complement}` : ""}
-        <br />
-        {address.neighborhood} - {address.city}/{address.state}
-        <br />
-        CEP {address.zipCode}
-      </p>
+      {address ? (
+        <p>
+          {address.recipientName}
+          <br />
+          {address.street}, {address.number}
+          {address.complement ? ` - ${address.complement}` : ""}
+          <br />
+          {address.neighborhood} - {address.city}/{address.state}
+          <br />
+          CEP {address.zipCode}
+        </p>
+      ) : (
+        <p>Endereço indisponível.</p>
+      )}
 
       <h2>Total</h2>
       <p>Subtotal: R$ {centsToReais(order.totalCents - order.shippingCents)}</p>
