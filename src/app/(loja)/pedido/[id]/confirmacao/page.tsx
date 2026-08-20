@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { centsToReais } from "@/lib/money";
 import type { ShippingAddress } from "@/lib/address";
+import { ClearCart } from "./ClearCart";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ export default async function ConfirmacaoPage({
 
   return (
     <div>
+      <ClearCart orderId={order.id} />
       <h1>Pedido confirmado</h1>
       <p style={{ fontSize: 20 }}>
         Seu número de pedido é <strong>#{order.number}</strong>
