@@ -46,6 +46,17 @@ export async function placeOrder(
     return { error: "Seu carrinho está vazio ou os itens não estão mais disponíveis" };
   }
 
+  // Se o estoque mudou entre o carrinho que o cliente viu e o que acabou de
+  // ser relido, o servidor já ajustou as quantidades — mas o cliente nunca
+  // pode ser redirecionado para uma confirmação que ele não concordou em
+  // pagar sem ser avisado antes.
+  if (cart.droppedCount > 0 || cart.items.some((item) => item.adjusted)) {
+    return {
+      error:
+        "A disponibilidade de alguns itens mudou enquanto você preenchia os dados. Volte ao carrinho e confira antes de finalizar.",
+    };
+  }
+
   const shippingCents = 0; // frete entra quando a integração do Melhor Envio existir
   const totalCents = cart.subtotalCents + shippingCents;
 
