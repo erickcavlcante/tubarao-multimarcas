@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { centsToReais } from "@/lib/money";
 import { ORDER_STATUS_LABELS, type OrderStatusValue } from "@/lib/order-status";
 import { readShippingAddress } from "@/lib/address";
+import { MarkAsPaidButton } from "./MarkAsPaidButton";
 
 export default async function PedidoDetalhePage({
   params,
@@ -91,6 +92,13 @@ export default async function PedidoDetalhePage({
         {order.shippingCents > 0 ? `R$ ${centsToReais(order.shippingCents)}` : "a calcular"}
       </p>
       <p style={{ fontWeight: "bold" }}>Total: R$ {centsToReais(order.totalCents)}</p>
+
+      {order.status === "AWAITING_PAYMENT" && (
+        <>
+          <h2>Ações</h2>
+          <MarkAsPaidButton orderId={order.id} />
+        </>
+      )}
     </div>
   );
 }
