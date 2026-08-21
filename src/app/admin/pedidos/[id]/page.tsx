@@ -2,9 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { centsToReais } from "@/lib/money";
-import { ORDER_STATUS_LABELS, type OrderStatusValue } from "@/lib/order-status";
+import { ORDER_STATUS_LABELS, allowedTransitions, type OrderStatusValue } from "@/lib/order-status";
 import { readShippingAddress } from "@/lib/address";
 import { MarkAsPaidButton } from "./MarkAsPaidButton";
+import { StatusActions } from "./StatusActions";
 
 export default async function PedidoDetalhePage({
   params,
@@ -102,12 +103,14 @@ export default async function PedidoDetalhePage({
       </p>
       <p style={{ fontWeight: "bold" }}>Total: R$ {centsToReais(order.totalCents)}</p>
 
-      {order.status === "AWAITING_PAYMENT" && (
-        <>
-          <h2>Ações</h2>
-          <MarkAsPaidButton orderId={order.id} />
-        </>
-      )}
+      <h2>Ações</h2>
+      {order.status === "AWAITING_PAYMENT" && <MarkAsPaidButton orderId={order.id} />}
+      <StatusActions
+        orderId={order.id}
+        targets={allowedTransitions(order.status as OrderStatusValue).filter(
+          (t) => !(order.status === "AWAITING_PAYMENT" && t === "PAID")
+        )}
+      />
     </div>
   );
 }
