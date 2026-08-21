@@ -3,11 +3,13 @@ import { DefaultSession } from "next-auth";
 declare module "next-auth" {
   interface Session {
     user: {
+      id: string;
       isAdmin: boolean;
     } & DefaultSession["user"];
   }
 
   interface User {
+    id: string;
     isAdmin: boolean;
   }
 }
@@ -17,6 +19,7 @@ declare module "next-auth" {
 // where the JWT callback's `token` parameter type actually comes from.
 declare module "@auth/core/jwt" {
   interface JWT {
+    id: string;
     isAdmin: boolean;
   }
 }
