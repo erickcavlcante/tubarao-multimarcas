@@ -28,15 +28,22 @@ export async function registerCustomer(
 
   const passwordHash = await hashPassword(validated.data.password);
 
-  // isAdmin NÃO é passado: fica no default `false` do schema. Nunca montar este
-  // objeto espalhando dados de formulário.
-  await prisma.user.create({
-    data: {
-      name: validated.data.name,
-      email: validated.data.email,
-      passwordHash,
-    },
-  });
+  try {
+    // isAdmin NÃO é passado: fica no default `false` do schema. Nunca montar
+    // este objeto espalhando dados de formulário.
+    await prisma.user.create({
+      data: {
+        name: validated.data.name,
+        email: validated.data.email,
+        passwordHash,
+      },
+    });
+  } catch {
+    // A constraint única do banco é a garantia real; a checagem acima é só
+    // para dar uma mensagem melhor no caso comum. Cobre o caso de duas
+    // submissões concorrentes para o mesmo email passarem pelo findUnique.
+    return { error: "Já existe uma conta com esse email" };
+  }
 
   return { ok: true };
 }
