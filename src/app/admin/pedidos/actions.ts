@@ -26,7 +26,7 @@ export async function markAsPaid(
       // cliques simultâneos leriam "aguardando" e ambos baixariam estoque.
       const claimed = await tx.order.updateMany({
         where: { id: orderId, status: "AWAITING_PAYMENT" },
-        data: { status: "PAID" },
+        data: { status: "PAID", paymentMethod: "manual" },
       });
 
       if (claimed.count === 0) {
@@ -103,59 +103,64 @@ export async function changeStatus(
     return { error: "Dados incompletos" };
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({ where: { id: orderId } });
-    if (!order) {
-      return { error: "Pedido não encontrado" };
-    }
+  let result: OrderActionState;
+  try {
+    result = await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({ where: { id: orderId } });
+      if (!order) {
+        return { error: "Pedido não encontrado" };
+      }
 
-    const current = order.status as OrderStatusValue;
-    if (!canTransition(current, target)) {
-      return { error: "Essa mudança de status não é permitida" };
-    }
+      const current = order.status as OrderStatusValue;
+      if (!canTransition(current, target)) {
+        return { error: "Essa mudança de status não é permitida" };
+      }
 
-    // Mesmo compare-and-swap do markAsPaid: garante que a transição só
-    // acontece a partir do status que acabamos de validar.
-    const claimed = await tx.order.updateMany({
-      where: { id: orderId, status: current },
-      data: { status: target },
-    });
-
-    if (claimed.count === 0) {
-      return { error: "O pedido mudou de status enquanto você agia. Recarregue a página." };
-    }
-
-    if (target === "CANCELED") {
-      // Devolve exatamente os itens que saíram do estoque, lidos do campo que
-      // markAsPaid gravou. `orderBy` mantém a mesma ordem global de lock usada
-      // na baixa, evitando deadlock entre dois cancelamentos simultâneos.
-      const decrementedItems = await tx.orderItem.findMany({
-        where: { orderId, stockDecremented: true },
-        orderBy: { variationId: "asc" },
+      // Mesmo compare-and-swap do markAsPaid: garante que a transição só
+      // acontece a partir do status que acabamos de validar.
+      const claimed = await tx.order.updateMany({
+        where: { id: orderId, status: current },
+        data: { status: target },
       });
 
-      for (const item of decrementedItems) {
-        await tx.productVariation.update({
-          where: { id: item.variationId },
-          data: { stock: { increment: item.quantity } },
-        });
+      if (claimed.count === 0) {
+        return { error: "O pedido mudou de status enquanto você agia. Recarregue a página." };
       }
 
-      if (decrementedItems.length > 0) {
-        await tx.orderItem.updateMany({
+      if (target === "CANCELED") {
+        // Devolve exatamente os itens que saíram do estoque, lidos do campo que
+        // markAsPaid gravou. `orderBy` mantém a mesma ordem global de lock usada
+        // na baixa, evitando deadlock entre dois cancelamentos simultâneos.
+        const decrementedItems = await tx.orderItem.findMany({
           where: { orderId, stockDecremented: true },
-          data: { stockDecremented: false },
+          orderBy: { variationId: "asc" },
         });
-        return {
-          message: `Pedido cancelado. ${decrementedItems.length} item(ns) devolvido(s) ao estoque.`,
-        };
+
+        for (const item of decrementedItems) {
+          await tx.productVariation.update({
+            where: { id: item.variationId },
+            data: { stock: { increment: item.quantity } },
+          });
+        }
+
+        if (decrementedItems.length > 0) {
+          await tx.orderItem.updateMany({
+            where: { orderId, stockDecremented: true },
+            data: { stockDecremented: false },
+          });
+          return {
+            message: `Pedido cancelado. ${decrementedItems.length} item(ns) devolvido(s) ao estoque.`,
+          };
+        }
+
+        return { message: "Pedido cancelado. Nenhum item havia saído do estoque." };
       }
 
-      return { message: "Pedido cancelado. Nenhum item havia saído do estoque." };
-    }
-
-    return { message: "Status atualizado." };
-  });
+      return { message: "Status atualizado." };
+    });
+  } catch {
+    return { error: "Não foi possível concluir a operação. Nada foi alterado — tente novamente." };
+  }
 
   revalidatePath(`/admin/pedidos/${orderId}`);
   revalidatePath("/admin/pedidos");
