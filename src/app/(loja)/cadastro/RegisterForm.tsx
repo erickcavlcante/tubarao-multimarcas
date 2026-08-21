@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -14,11 +14,13 @@ export function RegisterForm() {
   );
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [autoLoginFailed, setAutoLoginFailed] = useState(false);
+  const autoLoginAttempted = useRef(false);
 
   useEffect(() => {
-    if (!state?.ok) {
+    if (!state?.ok || autoLoginAttempted.current) {
       return;
     }
+    autoLoginAttempted.current = true;
     // Cadastro deu certo: entra automaticamente e leva pra área da conta.
     signIn("credentials", {
       email: credentials.email,
