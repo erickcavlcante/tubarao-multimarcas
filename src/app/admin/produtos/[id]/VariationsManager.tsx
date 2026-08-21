@@ -45,6 +45,7 @@ function VariationRow({
         <form action={updateActionBound} style={{ display: "inline-flex", gap: 4 }}>
           <input type="hidden" name="id" value={variation.id} />
           <input type="hidden" name="productId" value={productId} />
+          <input type="hidden" name="stockBefore" value={variation.stock} />
           <input type="text" name="price" defaultValue={centsToReais(variation.priceCents)} size={6} />
           <input type="number" name="stock" defaultValue={variation.stock} min={0} size={4} />
           <input type="number" name="weightGrams" defaultValue={variation.weightGrams} min={1} size={5} />

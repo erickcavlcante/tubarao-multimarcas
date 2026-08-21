@@ -149,10 +149,27 @@ export async function updateVariation(
     return { error: "Preço inválido" };
   }
 
-  await prisma.productVariation.update({
-    where: { id },
+  const stockBefore = Number(formData.get("stockBefore"));
+  if (!Number.isInteger(stockBefore)) {
+    return { error: "Não foi possível validar o estoque atual. Recarregue a página." };
+  }
+
+  // Guarda de valor esperado: o form carrega o estoque que estava na tela
+  // quando a página foi renderizada. Se ele já mudou (ex: um pedido foi pago
+  // entre a renderização e o salvamento), o `where` não bate em nenhuma linha
+  // e a gravação é rejeitada — em vez de sobrescrever silenciosamente uma
+  // baixa de estoque concorrente.
+  const updated = await prisma.productVariation.updateMany({
+    where: { id, stock: stockBefore },
     data: { priceCents, stock: Math.max(0, stock), weightGrams },
   });
+
+  if (updated.count === 0) {
+    return {
+      error:
+        "O estoque desta variação mudou enquanto você editava (provavelmente um pedido foi pago). Recarregue a página e tente de novo.",
+    };
+  }
 
   revalidatePath(`/admin/produtos/${productId}`);
   return undefined;
