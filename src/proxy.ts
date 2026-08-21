@@ -11,9 +11,11 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname.startsWith("/conta") && !req.auth) {
+  const user = req.auth?.user as { id?: string; isAdmin?: boolean } | undefined;
+
+  if (pathname.startsWith("/conta") && !user?.id) {
     const loginUrl = new URL("/login", origin);
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    loginUrl.searchParams.set("callbackUrl", pathname + req.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
 });
