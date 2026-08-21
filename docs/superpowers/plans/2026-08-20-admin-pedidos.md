@@ -618,12 +618,10 @@ git commit -m "feat: add mark-as-paid with conditional stock decrement"
 
 Modify `src/app/admin/pedidos/actions.ts` — adicionar ao topo, junto dos imports existentes:
 ```typescript
-import {
-  canTransition,
-  restoresStockOnCancel,
-  type OrderStatusValue,
-} from "@/lib/order-status";
+import { canTransition, type OrderStatusValue } from "@/lib/order-status";
 ```
+
+Nota importante (correção aplicada na Task 4): **`restoresStockOnCancel` não existe mais.** Ela era uma heurística baseada em status, e o review da Task 4 mostrou que ela erra no caso parcial — num pedido `PAID_STOCK_ISSUE`, parte dos itens baixou e parte não, então nem "devolve tudo" nem "não devolve nada" está certo. Foi substituída pelo campo `OrderItem.stockDecremented`, que registra por item se aquele item saiu do estoque. O cancelamento devolve **exatamente os itens marcados**, o que é correto nos três casos: pedido não pago (nenhum marcado, nada volta), pedido pago (todos marcados, tudo volta), pedido com falta parcial (só os que saíram voltam).
 
 E adicionar ao final do arquivo (mantendo `markAsPaid` como está):
 ```typescript
@@ -661,22 +659,33 @@ export async function changeStatus(
       return { error: "O pedido mudou de status enquanto você agia. Recarregue a página." };
     }
 
-    if (target === "CANCELED" && restoresStockOnCancel(current)) {
-      const items = await tx.orderItem.findMany({ where: { orderId } });
-      for (const item of items) {
+    if (target === "CANCELED") {
+      // Devolve exatamente os itens que saíram do estoque, lidos do campo que
+      // markAsPaid gravou. `orderBy` mantém a mesma ordem global de lock usada
+      // na baixa, evitando deadlock entre dois cancelamentos simultâneos.
+      const decrementedItems = await tx.orderItem.findMany({
+        where: { orderId, stockDecremented: true },
+        orderBy: { variationId: "asc" },
+      });
+
+      for (const item of decrementedItems) {
         await tx.productVariation.update({
           where: { id: item.variationId },
           data: { stock: { increment: item.quantity } },
         });
       }
-      return { message: "Pedido cancelado e estoque devolvido." };
-    }
 
-    if (target === "CANCELED" && current === "PAID_STOCK_ISSUE") {
-      return {
-        message:
-          "Pedido cancelado. O estoque NÃO foi devolvido automaticamente porque este pedido tinha problema de estoque — confira e ajuste manualmente.",
-      };
+      if (decrementedItems.length > 0) {
+        await tx.orderItem.updateMany({
+          where: { orderId, stockDecremented: true },
+          data: { stockDecremented: false },
+        });
+        return {
+          message: `Pedido cancelado. ${decrementedItems.length} item(ns) devolvido(s) ao estoque.`,
+        };
+      }
+
+      return { message: "Pedido cancelado. Nenhum item havia saído do estoque." };
     }
 
     return { message: "Status atualizado." };
@@ -757,8 +766,10 @@ Run: `npm run dev`.
 
 1. Pedido pago → clicar em "Marcar como enviado" → status vira "Enviado", e as ações disponíveis passam a ser só "Marcar como entregue".
 2. Pedido enviado → "Marcar como entregue" → status vira "Entregue" e a tela diz que não há mais ações.
-3. **Cancelamento com devolução de estoque:** anotar o estoque, fazer um pedido, marcar como pago (estoque baixa), depois cancelar — a mensagem deve dizer que o estoque foi devolvido, e o estoque deve voltar exatamente ao valor original.
-4. **Transição inválida:** com um pedido entregue, forçar um POST da action pedindo `SHIPPED` — deve retornar "Essa mudança de status não é permitida" e o status não pode mudar.
+3. **Cancelamento com devolução de estoque:** anotar o estoque, fazer um pedido, marcar como pago (estoque baixa), depois cancelar — a mensagem deve dizer quantos itens voltaram, e o estoque deve voltar exatamente ao valor original.
+4. **Cancelamento sem nada a devolver:** fazer um pedido e cancelar direto, sem marcar como pago — a mensagem deve dizer que nenhum item havia saído do estoque, e nenhum estoque pode mudar.
+5. **Cancelamento parcial (o caso que motivou o campo `stockDecremented`):** montar um pedido com duas variações, uma com estoque suficiente e outra sem; marcar como pago (vira `PAID_STOCK_ISSUE`, só uma baixa); depois cancelar — **só a variação que baixou pode voltar**, e a outra não pode ser incrementada. Conferir os dois números.
+6. **Transição inválida:** com um pedido entregue, forçar um POST da action pedindo `SHIPPED` — deve retornar "Essa mudança de status não é permitida" e o status não pode mudar.
 
 Restaurar os dados de teste e registrar no relatório.
 
