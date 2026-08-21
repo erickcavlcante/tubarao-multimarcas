@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { loadCart } from "../carrinho/actions";
 import { parseAddress, isValidEmail } from "@/lib/address";
 import type { CartLine } from "@/lib/cart";
@@ -39,6 +40,11 @@ export async function placeOrder(
     return { error: "Carrinho inválido" };
   }
 
+  // Vem da sessão, nunca do formulário — um userId enviado pelo cliente
+  // deixaria qualquer um atribuir pedidos à conta de outra pessoa.
+  const session = await auth();
+  const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+
   let order;
   try {
     // O carrinho é relido inteiro do banco: preços, estoque e disponibilidade
@@ -65,6 +71,7 @@ export async function placeOrder(
     order = await prisma.$transaction(async (tx) => {
       return tx.order.create({
         data: {
+          userId,
           contactEmail,
           shippingAddress: parsed.address,
           shippingCents,

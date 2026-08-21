@@ -7,14 +7,36 @@ import { loadCart, type LoadedCart } from "../carrinho/actions";
 import { placeOrder, type PlaceOrderState } from "./actions";
 import { centsToReais } from "@/lib/money";
 
-export function CheckoutForm() {
+type SavedAddress = {
+  id: string;
+  label: string | null;
+  recipientName: string;
+  zipCode: string;
+  street: string;
+  number: string;
+  complement: string | null;
+  neighborhood: string;
+  city: string;
+  state: string;
+};
+
+export function CheckoutForm({
+  savedAddresses,
+  defaultEmail,
+}: {
+  savedAddresses: SavedAddress[];
+  defaultEmail: string | null;
+}) {
   const { lines, ready } = useCart();
   const [cart, setCart] = useState<LoadedCart | null>(null);
   const [loading, setLoading] = useState(true);
   const [cepLoading, setCepLoading] = useState(false);
   const [address, setAddress] = useState({
+    recipientName: "",
     zipCode: "",
     street: "",
+    number: "",
+    complement: "",
     neighborhood: "",
     city: "",
     state: "",
@@ -91,13 +113,57 @@ export function CheckoutForm() {
       <h2>Contato</h2>
       <label>
         Email:{" "}
-        <input type="email" name="contactEmail" required placeholder="seu@email.com" />
+        <input
+          type="email"
+          name="contactEmail"
+          required
+          placeholder="seu@email.com"
+          defaultValue={defaultEmail ?? ""}
+        />
       </label>
 
       <h2>Entrega</h2>
+      {savedAddresses.length > 0 && (
+        <label>
+          Usar um endereço salvo:{" "}
+          <select
+            defaultValue=""
+            onChange={(e) => {
+              const chosen = savedAddresses.find((a) => a.id === e.target.value);
+              if (!chosen) {
+                return;
+              }
+              setAddress({
+                recipientName: chosen.recipientName,
+                zipCode: chosen.zipCode,
+                street: chosen.street,
+                number: chosen.number,
+                complement: chosen.complement ?? "",
+                neighborhood: chosen.neighborhood,
+                city: chosen.city,
+                state: chosen.state,
+              });
+            }}
+          >
+            <option value="">Digitar um novo endereço</option>
+            {savedAddresses.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.label ? `${a.label} — ` : ""}
+                {a.street}, {a.number}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label>
         Nome de quem vai receber:{" "}
-        <input type="text" name="recipientName" required />
+        <input
+          type="text"
+          name="recipientName"
+          required
+          value={address.recipientName}
+          onChange={(e) => setAddress((prev) => ({ ...prev, recipientName: e.target.value }))}
+        />
       </label>
       <label>
         CEP:{" "}
@@ -123,10 +189,23 @@ export function CheckoutForm() {
         />
       </label>
       <label>
-        Número: <input type="text" name="number" required />
+        Número:{" "}
+        <input
+          type="text"
+          name="number"
+          required
+          value={address.number}
+          onChange={(e) => setAddress((prev) => ({ ...prev, number: e.target.value }))}
+        />
       </label>
       <label>
-        Complemento: <input type="text" name="complement" />
+        Complemento:{" "}
+        <input
+          type="text"
+          name="complement"
+          value={address.complement}
+          onChange={(e) => setAddress((prev) => ({ ...prev, complement: e.target.value }))}
+        />
       </label>
       <label>
         Bairro:{" "}
