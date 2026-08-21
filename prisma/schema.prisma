@@ -103,13 +103,14 @@ model Order {
 }
 
 model OrderItem {
-  id          String           @id @default(cuid())
-  order       Order            @relation(fields: [orderId], references: [id])
-  orderId     String
-  variation   ProductVariation @relation(fields: [variationId], references: [id])
-  variationId String
-  quantity    Int
-  priceCents  Int
+  id               String           @id @default(cuid())
+  order            Order            @relation(fields: [orderId], references: [id])
+  orderId          String
+  variation        ProductVariation @relation(fields: [variationId], references: [id])
+  variationId      String
+  quantity         Int
+  priceCents       Int
+  stockDecremented Boolean          @default(false)
 }
 
 model Shipment {
