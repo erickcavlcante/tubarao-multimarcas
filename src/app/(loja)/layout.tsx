@@ -19,6 +19,7 @@ export default async function LojaLayout({ children }: { children: React.ReactNo
             </Link>
             <nav style={{ display: "flex", gap: 16 }}>
               <Link href="/produtos">Todos os produtos</Link>
+              <Link href="/conta">Minha conta</Link>
               <CartLink />
             </nav>
           </div>
