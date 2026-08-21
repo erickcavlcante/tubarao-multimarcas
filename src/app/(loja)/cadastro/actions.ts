@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { validateRegistration } from "@/lib/registration";
 import { hashPassword } from "@/lib/password";
@@ -38,11 +39,18 @@ export async function registerCustomer(
         passwordHash,
       },
     });
-  } catch {
+  } catch (error) {
     // A constraint única do banco é a garantia real; a checagem acima é só
     // para dar uma mensagem melhor no caso comum. Cobre o caso de duas
     // submissões concorrentes para o mesmo email passarem pelo findUnique.
-    return { error: "Já existe uma conta com esse email" };
+    // Qualquer outra falha (banco fora do ar, pool esgotado, bcrypt etc.)
+    // precisa aparecer nos logs em vez de virar silenciosamente "email
+    // duplicado" — senão uma indisponibilidade real passa despercebida.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      return { error: "Já existe uma conta com esse email" };
+    }
+    console.error("Falha ao criar conta:", error);
+    return { error: "Não foi possível criar sua conta agora. Tente novamente." };
   }
 
   return { ok: true };
