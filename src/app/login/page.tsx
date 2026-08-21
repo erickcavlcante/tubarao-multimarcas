@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { isSafeRedirectPath } from "@/lib/safe-redirect";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function LoginPage() {
       return;
     }
     const callbackUrl = searchParams.get("callbackUrl");
-    if (callbackUrl && callbackUrl.startsWith("/")) {
+    if (isSafeRedirectPath(callbackUrl, window.location.origin)) {
       router.push(callbackUrl);
     } else {
       const session = await getSession();
