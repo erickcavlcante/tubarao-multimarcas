@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  allowedTransitions,
-  canTransition,
-  restoresStockOnCancel,
-  ORDER_STATUS_LABELS,
-} from "./order-status";
+import { allowedTransitions, canTransition, ORDER_STATUS_LABELS } from "./order-status";
 
 describe("allowedTransitions", () => {
   it("lets an awaiting-payment order be paid or canceled", () => {
@@ -55,20 +50,6 @@ describe("canTransition", () => {
 
   it("rejects canceling something already shipped", () => {
     expect(canTransition("SHIPPED", "CANCELED")).toBe(false);
-  });
-});
-
-describe("restoresStockOnCancel", () => {
-  it("restores stock when canceling a paid order", () => {
-    expect(restoresStockOnCancel("PAID")).toBe(true);
-  });
-
-  it("does not restore when nothing was ever decremented", () => {
-    expect(restoresStockOnCancel("AWAITING_PAYMENT")).toBe(false);
-  });
-
-  it("does not auto-restore an order flagged with a stock issue", () => {
-    expect(restoresStockOnCancel("PAID_STOCK_ISSUE")).toBe(false);
   });
 });
 

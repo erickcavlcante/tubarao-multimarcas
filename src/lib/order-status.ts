@@ -31,7 +31,3 @@ export function allowedTransitions(from: OrderStatusValue): OrderStatusValue[] {
 export function canTransition(from: OrderStatusValue, to: OrderStatusValue): boolean {
   return allowedTransitions(from).includes(to);
 }
-
-export function restoresStockOnCancel(from: OrderStatusValue): boolean {
-  return from === "PAID";
-}
