@@ -42,6 +42,13 @@ export default async function PedidoDetalhePage({
       <p>Cliente: {order.contactEmail}</p>
 
       <h2>Itens</h2>
+      {order.status === "PAID_STOCK_ISSUE" && (
+        <p style={{ background: "#fef3c7", padding: 8 }}>
+          Este pedido foi pago mas faltou estoque para parte dos itens. A coluna
+          &quot;Estoque baixado&quot; abaixo mostra quais itens já saíram do estoque e quais não.
+          Ajuste o estoque em Produtos e trate este pedido manualmente.
+        </p>
+      )}
       <table>
         <thead>
           <tr>
@@ -51,6 +58,7 @@ export default async function PedidoDetalhePage({
             <th>Qtd</th>
             <th>Preço unit.</th>
             <th>Total</th>
+            <th>Estoque baixado</th>
           </tr>
         </thead>
         <tbody>
@@ -64,6 +72,7 @@ export default async function PedidoDetalhePage({
               <td>{item.quantity}</td>
               <td>R$ {centsToReais(item.priceCents)}</td>
               <td>R$ {centsToReais(item.priceCents * item.quantity)}</td>
+              <td>{item.stockDecremented ? "Sim" : "Não"}</td>
             </tr>
           ))}
         </tbody>
