@@ -22,6 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <nav style={{ display: "flex", gap: 16 }}>
           <Link href="/admin/produtos">Produtos</Link>
           <Link href="/admin/categorias">Categorias</Link>
+          <Link href="/admin/pedidos">Pedidos</Link>
           <Link href="/admin/configuracoes">Configurações</Link>
         </nav>
         <form action={handleSignOut}>

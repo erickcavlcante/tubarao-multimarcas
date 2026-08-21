@@ -13,6 +13,9 @@ export default function AdminDashboardPage() {
           <Link href="/admin/categorias">Categorias</Link>
         </li>
         <li>
+          <Link href="/admin/pedidos">Pedidos</Link>
+        </li>
+        <li>
           <Link href="/admin/configuracoes">Configurações</Link>
         </li>
       </ul>
