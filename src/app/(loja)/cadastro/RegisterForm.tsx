@@ -13,6 +13,7 @@ export function RegisterForm() {
     undefined
   );
   const [credentials, setCredentials] = useState({ email: "", password: "" });
+  const [autoLoginFailed, setAutoLoginFailed] = useState(false);
 
   useEffect(() => {
     if (!state?.ok) {
@@ -23,7 +24,11 @@ export function RegisterForm() {
       email: credentials.email,
       password: credentials.password,
       redirect: false,
-    }).then(() => {
+    }).then((result) => {
+      if (result?.error) {
+        setAutoLoginFailed(true);
+        return;
+      }
       router.push("/conta");
       router.refresh();
     });
@@ -59,6 +64,12 @@ export function RegisterForm() {
         Confirme a senha: <input type="password" name="passwordConfirm" required minLength={8} />
       </label>
       {state?.error && <p style={{ color: "#b91c1c" }}>{state.error}</p>}
+      {autoLoginFailed && (
+        <p style={{ color: "#b45309" }}>
+          Sua conta foi criada, mas não conseguimos entrar automaticamente.{" "}
+          <Link href="/login">Entre aqui</Link>.
+        </p>
+      )}
       <button type="submit" disabled={pending}>
         {pending ? "Criando conta..." : "Criar conta"}
       </button>
